@@ -27,3 +27,11 @@ LINODE_LINUX_CODE_DIRECTORY = '/root/Product-Congfiguration/'
 WINDOWS_CODE_DIRECTORY = 'C:/Users/Framecad/HomeControlGUIs'
 
 MAMMOTH_BRIGHT_GRREN = '#03C04A'
+
+VIEWS = ['Floor Plan', 'Exterior', 'Interior', 'Roof', 'Extras']
+
+FLOOR_PLAN_TYPES = ['LiteHouse', 'Lustron', 'POD']
+EXTERIOR_MATERIALS = ['White', 'Red', 'Brown']
+
+
+MAX_EMAIL_LENGHT = 320
