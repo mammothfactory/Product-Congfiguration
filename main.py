@@ -17,6 +17,13 @@ __doc__        = "Generate Progressive Web App GUI to configure products for sal
 
 # Standard Python libraries
 import sys
+from time import sleep
+
+import re
+
+import tracemalloc
+tracemalloc.start()
+
 
 # Browser base GUI framework to build and display a user interface mobile, PC, and Mac
 # https://nicegui.io/
@@ -50,11 +57,11 @@ finally:
     darkMode = ui.dark_mode()
     darkMode.enable()
     currentExteriorImage = 'static/images/WhiteSiding.png'
-    currentInteriorImage = 'static/images/INTERIOR.png'
+    currentInteriorImage = '/static/images/Interior/DarkKitchen.png'
+    finalViewImage= '/static/images/FinalView.png'
 
 
 def select_image(radioButtonEvent: ValueChangeEventArguments):
-    subsection.classes('w-128')
     if radioButtonEvent.value == GC.EXTERIOR_MATERIALS[0]:
         exteriorRadioButtons.props('inline color=white')
         exteriorII.set_source('static/images/WhiteSiding.png')
@@ -74,29 +81,29 @@ def select_image(radioButtonEvent: ValueChangeEventArguments):
 
 def select_form(selection):
     print(f"Dropdown changed: {selection}")
-    if selection == GC.VIEWS[0]:
+    if selection == GC.VIEWS[GC.FLOOR_PLAN_VIEW_NUM]:
         floorPlanRadioButtons.set_visibility(True)
         exteriorView.set_visibility(True)                # TODO replace with floor plans 
         exteriorRadioButtons.set_visibility(False)       # TODO replace with floor plans  
         interiorView.set_visibility(False) 
         interiorRadioButtons.set_visibility(False)
-        finalScreen.set_visibility(False)
+        finalView.set_visibility(False)
 
-    elif selection == GC.VIEWS[1]:
+    elif selection == GC.VIEWS[GC.EXTERIOR_VIEW_NUM]:
         floorPlanRadioButtons.set_visibility(False)
         exteriorView.set_visibility(True)
         exteriorRadioButtons.set_visibility(True)
         interiorView.set_visibility(False)
         interiorRadioButtons.set_visibility(False) 
-        finalScreen.set_visibility(False)
+        finalView.set_visibility(False)
         
-    elif selection == GC.VIEWS[2]:
+    elif selection == GC.VIEWS[GC.INTERIOR_VIEW_NUM]:
         floorPlanRadioButtons.set_visibility(False)
         exteriorView.set_visibility(False)
         exteriorRadioButtons.set_visibility(False)
         interiorView.set_visibility(True) 
         interiorRadioButtons.set_visibility(True)
-        finalScreen.set_visibility(False)
+        finalView.set_visibility(False)
 
 
 def redirect():
@@ -105,11 +112,25 @@ def redirect():
     pass
 
 
-def sanitized_email(text: str):
-    pass
+async def is_valid_email(email: str):
+    invalidEmailLabel.tailwind.font_weight('extrabold').text_color('red-600')
+    emailPattern = r'^[\w\.-]+(\+[\w-]+)?@[\w\.-]+\.\w+$'
+    valid = re.match(emailPattern, email) is not None
+    if not valid:
+        invalidEmailLabel.visible = True
+        invalidEmailLabel.set_text(f"{email} is an INVALID email.") 
+    else:
+        invalidEmailLabel.visible = False
+        await send_email(email)
 
-
-def send_email():
+async def send_email(email: str):
+    
+    exteriorView.set_visibility(False)
+    interiorView.set_visibility(False)
+    finalView.set_visibility(True)  
+    sleep(3)
+    await ui.run_javascript('top.location.href = "https://www.mammothfactory.co/deposit"', respond=True)
+    #await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
     pass
 
 
@@ -130,28 +151,30 @@ if __name__ in {"__main__", "__mp_main__"}:
         with interiorView:
             interiorII = ui.interactive_image(currentInteriorImage, on_mouse=select_image, events=['mousedown', 'mouseup'], cross=False)
 
-        finalScreen = ui.row()
-        finalScreen.set_visibility(False)   
+        finalView = ui.row()
+        finalView.set_visibility(False) 
+        with finalView:
+            finalII = ui.interactive_image(finalViewImage, on_mouse=select_image, events=['mousedown', 'mouseup'], cross=False)
+             
 
     dataForm = ui.grid(columns=2)
     with dataForm:    
         subsection = ui.select(GC.VIEWS, value=GC.VIEWS[0], on_change=lambda e: select_form(e.value)).classes('w-96')
-        print("Width of dropdown is w-128")
         floorPlanRadioButtons = ui.radio(GC.FLOOR_PLAN_TYPES, value=GC.FLOOR_PLAN_TYPES[0], on_change=select_image).props('inline color=white').classes('w-max')
         
         exteriorRadioButtons = ui.radio(GC.EXTERIOR_MATERIALS, value=GC.EXTERIOR_MATERIALS[0], on_change=select_image).props('inline color=white').classes('w-max')
         exteriorRadioButtons.set_visibility(False)
-        interiorRadioButtons = ui.radio(["Light", "Dark",], value="Item 1").props('inline color=white').classes('w-max')
+        interiorRadioButtons = ui.radio(["Dark", "Light",], value="Dark").props('inline color=white').classes('w-max')
         interiorRadioButtons.set_visibility(False)
 
     userForm = ui.grid(columns=1)
     with userForm:
         sanitizedEmail = "blairg@mfc.us"
         emailTextBox = ui.input(label='Enter your email', placeholder='e.g. name@example.com', \
-                                on_change=lambda e: invalidEmailLabel.set_text(sanitized_email(e.value)), \
-                                validation={'Your email is too long, should be 320 characters or less': lambda value: len(sanitizedEmail) <= GC.MAX_EMAIL_LENGHT}).classes('w-full')
-        invalidEmailLabel = ui.label("BAD EMAIL")
+                                #on_change=lambda e: ???, \
+                                validation={'ERROR: Your email is longer then 48 characters': lambda e: len(e) <= GC.MAX_EMAIL_LENGHT}).classes('w-96')
+        invalidEmailLabel = ui.label()
         invalidEmailLabel.visible = False
-        submitButton = ui.button("SUMBIT CONFIG").classes('w-96')
+        submitButton = ui.button("SUMBIT CONFIG", on_click=lambda e: is_valid_email(emailTextBox.value)).classes('w-96')
 
     ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)

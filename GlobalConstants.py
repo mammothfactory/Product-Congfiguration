@@ -29,9 +29,15 @@ WINDOWS_CODE_DIRECTORY = 'C:/Users/Framecad/HomeControlGUIs'
 MAMMOTH_BRIGHT_GRREN = '#03C04A'
 
 VIEWS = ['Floor Plan', 'Exterior', 'Interior', 'Roof', 'Extras']
+FLOOR_PLAN_VIEW_NUM = 0
+EXTERIOR_VIEW_NUM = 1
+INTERIOR_VIEW_NUM = 2
+ROOF_VIEW_NUM = 3
+EXTRAS_VIEW_NUM = 4
+
 
 FLOOR_PLAN_TYPES = ['LiteHouse', 'Lustron', 'POD']
 EXTERIOR_MATERIALS = ['White', 'Red', 'Brown']
 
 
-MAX_EMAIL_LENGHT = 320
+MAX_EMAIL_LENGHT = 47
