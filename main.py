@@ -56,28 +56,52 @@ finally:
     isDarkModeOn = False            # Application boots up in light mode
     darkMode = ui.dark_mode()
     darkMode.enable()
-    currentExteriorImage = 'static/images/WhiteSiding.png'
+    currentFloorPlanImage = 'static/images/FloorPlan/LiteHouseV1_00000.png'
+    currentExteriorImage = 'static/images/Exterior/BrickFaceWoodCladding.png'  
     currentInteriorImage = '/static/images/Interior/DarkKitchen.png'
     finalViewImage= '/static/images/FinalView.png'
 
 
-def select_image(radioButtonEvent: ValueChangeEventArguments):
+def select_exterior_image(radioButtonEvent: ValueChangeEventArguments):
+    global currentExteriorImage
+    
+    exteriorII.set_source(currentExteriorImage)
     if radioButtonEvent.value == GC.EXTERIOR_MATERIALS[0]:
-        exteriorRadioButtons.props('inline color=white')
-        exteriorII.set_source('static/images/WhiteSiding.png')
-        configuration[0] = GC.EXTERIOR_MATERIALS[0]
-    elif radioButtonEvent.value == "Red":
-        exteriorRadioButtons.props('inline color=red')
-        exteriorII.set_source('static/images/RedSiding.png')
-        configuration[0] = GC.EXTERIOR_MATERIALS[1]
-    elif radioButtonEvent.value == "Brown":
-        exteriorRadioButtons.props('inline color=brown')
-        exteriorII.set_source('static/images/BrownSiding.png')
-        configuration[0] = GC.EXTERIOR_MATERIALS[2]
-    else:
-        exteriorII.set_source('static/images/WhiteSiding.png')
-        configuration[0] = GC.EXTERIOR_MATERIALS[0]
+        exteriorII.set_source('static/images/Exterior/BrickFaceWoodCladding.png')
+        purchaseConfiguration[0] = GC.EXTERIOR_MATERIALS[0]
+        
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[1]:
+        exteriorII.set_source('static/images/Exterior/DarkWoodCladding.png')
+        purchaseConfiguration[0] = GC.EXTERIOR_MATERIALS[1]
+        
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[2]:
+        exteriorII.set_source('static/images/Exterior/WeatheredCladding.png')
+        purchaseConfiguration[0] = GC.EXTERIOR_MATERIALS[2]
+        
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[3]:
+        exteriorII.set_source('static/images/Exterior/WhiteCladding.png')
+        purchaseConfiguration[0] = GC.EXTERIOR_MATERIALS[3]
+        
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[4]:
+        exteriorII.set_source('static/images/Exterior/WoodCladding.png')
+        purchaseConfiguration[0] = GC.EXTERIOR_MATERIALS[4]
 
+def select_floor_plan_image(radioButtonEvent: ValueChangeEventArguments):
+    pass
+
+
+def select_interior_image(radioButtonEvent: ValueChangeEventArguments):
+    global currentInteriorImage
+    print('Changing interior color')
+    interiorII.set_source(currentInteriorImage)
+    if radioButtonEvent.value == GC.INTERIOR_COLOR[0]:
+        interiorII.set_source('static/images/Interior/DarkKitchen.png')
+        purchaseConfiguration[1] = GC.INTERIOR_COLOR[0]
+        
+    elif radioButtonEvent.value == GC.INTERIOR_COLOR[1]:
+        interiorII.set_source('static/images/Interior/BlueKitchen.png')
+        purchaseConfiguration[1] = GC.INTERIOR_COLOR[1]
+        
 
 def select_form(selection):
     print(f"Dropdown changed: {selection}")
@@ -128,9 +152,8 @@ async def send_email(email: str):
     exteriorView.set_visibility(False)
     interiorView.set_visibility(False)
     finalView.set_visibility(True)  
-    sleep(3)
+    sleep(5)
     await ui.run_javascript('top.location.href = "https://www.mammothfactory.co/deposit"', respond=True)
-    #await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
     pass
 
 
@@ -138,43 +161,48 @@ if __name__ in {"__main__", "__mp_main__"}:
     darkMode.enable()
     ui.colors(primary=GC.MAMMOTH_BRIGHT_GRREN)
 
-    configuration = ["White", "Litehouse", "?"]
+    purchaseConfiguration = [GC.FLOOR_PLAN_TYPES[0], GC.EXTERIOR_MATERIALS[0], GC.INTERIOR_COLOR[0], GC.ROOF_STYLE[0], GC.EXTRAS[0]]
 
     imageGrid = ui.grid(columns=1)
     with imageGrid:
         exteriorView = ui.row()
         with exteriorView:
-            exteriorII = ui.interactive_image(currentExteriorImage, on_mouse=select_image, events=['mousedown', 'mouseup'], cross=False)
+            exteriorII = ui.interactive_image(currentExteriorImage, events=['mousedown', 'mouseup'], cross=False)
 
         interiorView = ui.row()
         interiorView.set_visibility(False)   
         with interiorView:
-            interiorII = ui.interactive_image(currentInteriorImage, on_mouse=select_image, events=['mousedown', 'mouseup'], cross=False)
+            interiorII = ui.interactive_image(currentInteriorImage, events=['mousedown', 'mouseup'], cross=False)
 
         finalView = ui.row()
         finalView.set_visibility(False) 
         with finalView:
-            finalII = ui.interactive_image(finalViewImage, on_mouse=select_image, events=['mousedown', 'mouseup'], cross=False)
+            finalII = ui.interactive_image(finalViewImage, events=['mousedown', 'mouseup'], cross=False)   # on_mouse=await ui.run_javascript('top.location.href = "https://www.mammothfactory.co/deposit"', respond=True)
              
 
-    dataForm = ui.grid(columns=2)
+    dataForm = ui.grid(columns=2).classes('w-full')   # 'w-full' or max-w-2xl' with iframe size of ~1145
     with dataForm:    
-        subsection = ui.select(GC.VIEWS, value=GC.VIEWS[0], on_change=lambda e: select_form(e.value)).classes('w-96')
-        floorPlanRadioButtons = ui.radio(GC.FLOOR_PLAN_TYPES, value=GC.FLOOR_PLAN_TYPES[0], on_change=select_image).props('inline color=white').classes('w-max')
+        with ui.column():
+            subsection = ui.select(GC.VIEWS, value=GC.VIEWS[0], on_change=lambda e: select_form(e.value)).classes('w-80')
         
-        exteriorRadioButtons = ui.radio(GC.EXTERIOR_MATERIALS, value=GC.EXTERIOR_MATERIALS[0], on_change=select_image).props('inline color=white').classes('w-max')
-        exteriorRadioButtons.set_visibility(False)
-        interiorRadioButtons = ui.radio(["Dark", "Light",], value="Dark").props('inline color=white').classes('w-max')
-        interiorRadioButtons.set_visibility(False)
+        
+        with ui.column():
+            floorPlanRadioButtons = ui.radio(GC.FLOOR_PLAN_TYPES, value=GC.FLOOR_PLAN_TYPES[0], on_change=select_floor_plan_image).props('inline color=white')
+            exteriorRadioButtons = ui.radio(GC.EXTERIOR_MATERIALS, value=GC.EXTERIOR_MATERIALS[0], on_change=select_exterior_image).props('inline color=white')
+            exteriorRadioButtons.set_visibility(False)
+            interiorRadioButtons = ui.radio(["Dark", "Light"], value=GC.INTERIOR_COLOR[0], on_change=select_interior_image).props('inline color=white')
+            interiorRadioButtons.set_visibility(False)
+        
+
 
     userForm = ui.grid(columns=1)
     with userForm:
         sanitizedEmail = "blairg@mfc.us"
         emailTextBox = ui.input(label='Enter your email', placeholder='e.g. name@example.com', \
                                 #on_change=lambda e: ???, \
-                                validation={'ERROR: Your email is longer then 48 characters': lambda e: len(e) <= GC.MAX_EMAIL_LENGHT}).classes('w-96')
+                                validation={'ERROR: Your email is longer then 48 characters': lambda e: len(e) <= GC.MAX_EMAIL_LENGHT}).classes('w-80')
         invalidEmailLabel = ui.label()
         invalidEmailLabel.visible = False
-        submitButton = ui.button("SUMBIT CONFIG", on_click=lambda e: is_valid_email(emailTextBox.value)).classes('w-96')
+        submitButton = ui.button("SUMBIT CONFIG", on_click=lambda e: is_valid_email(emailTextBox.value)).classes('w-80')
 
     ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)
