@@ -24,14 +24,17 @@ import re
 import tracemalloc
 tracemalloc.start()
 
+from Slack import Slack 
+from OrderDatabase import OrderDatabase
 
 # Browser base GUI framework to build and display a user interface mobile, PC, and Mac
 # https://nicegui.io/
 from nicegui import app, ui
-# TODO REMOVE IF MOUSE CLICKS ON INTERACTIVE IMAGE IS NOT NEEDED? from nicegui.events import MouseEventArguments
 from nicegui.events import ValueChangeEventArguments
 
 import GlobalConstants as GC                        # Global constants used across ??? files
+
+purchaseConfiguration = [GC.FLOOR_PLAN_TYPES[0], GC.EXTERIOR_MATERIAL[0], GC.INTERIOR_COLOR[0], GC.ROOF_STYLE[0], GC.EXTRAS[0]]
 
 try:  # Importing externally developed 3rd party modules / libraries
 
@@ -56,6 +59,8 @@ finally:
     isDarkModeOn = False            # Application boots up in light mode
     darkMode = ui.dark_mode()
     darkMode.enable()
+    # Set the Slack channel or user where you want to send the message
+    CHANNEL = "#website-order"
     currentFloorPlanImage = 'static/images/FloorPlan/LiteHouseV1_00000.png'
     currentExteriorImage = 'static/images/Exterior/BrickFaceWoodCladding.png'  
     currentInteriorImage = '/static/images/Interior/DarkKitchen.png'
@@ -73,25 +78,25 @@ def select_exterior_image(radioButtonEvent: ValueChangeEventArguments):
     global currentExteriorImage
     
     exteriorII.set_source(currentExteriorImage)
-    if radioButtonEvent.value == GC.EXTERIOR_MATERIALS[0]:
+    if radioButtonEvent.value == GC.EXTERIOR_MATERIAL[0]:
         exteriorII.set_source('static/images/Exterior/BrickFaceWoodCladding.png')
-        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIALS[0]
+        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIAL[0]
         
-    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[1]:
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIAL[1]:
         exteriorII.set_source('static/images/Exterior/DarkWoodCladding.png')
-        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIALS[1]
+        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIAL[1]
         
-    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[2]:
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIAL[2]:
         exteriorII.set_source('static/images/Exterior/WeatheredCladding.png')
-        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIALS[2]
+        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIAL[2]
         
-    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[3]:
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIAL[3]:
         exteriorII.set_source('static/images/Exterior/WhiteCladding.png')
-        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIALS[3]
+        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIAL[3]
         
-    elif radioButtonEvent.value == GC.EXTERIOR_MATERIALS[4]:
+    elif radioButtonEvent.value == GC.EXTERIOR_MATERIAL[4]:
         exteriorII.set_source('static/images/Exterior/WoodCladding.png')
-        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIALS[4]
+        purchaseConfiguration[GC.EXTERIOR_VIEW_NUM] = GC.EXTERIOR_MATERIAL[4]
 
 
 def select_interior_image(radioButtonEvent: ValueChangeEventArguments):
@@ -105,15 +110,25 @@ def select_interior_image(radioButtonEvent: ValueChangeEventArguments):
     elif radioButtonEvent.value == GC.INTERIOR_COLOR[1]:
         interiorII.set_source('static/images/Interior/BlueKitchen.png')
         purchaseConfiguration[GC.INTERIOR_VIEW_NUM] = GC.INTERIOR_COLOR[1]
-        
+
+
+def select_roof_image(radioButtonEvent: ValueChangeEventArguments):
+    # TODO
+    pass
+
+
+def select_extras_image(radioButtonEvent: ValueChangeEventArguments):
+    # TODO
+    pass
+       
 
 def select_form(selection):
     print(f"Dropdown changed: {selection}")
     if selection == GC.VIEWS[GC.FLOOR_PLAN_VIEW_NUM]:
         floorplanView.set_visibility(True)
         floorplanRadioButtons.set_visibility(True)
-        exteriorView.set_visibility(False)                # TODO replace with floor plans 
-        exteriorRadioButtons.set_visibility(False)       # TODO replace with floor plans  
+        exteriorView.set_visibility(False)              # TODO replace with floor plans 
+        exteriorRadioButtons.set_visibility(False)      # TODO replace with floor plans  
         interiorView.set_visibility(False) 
         interiorRadioButtons.set_visibility(False)
         
@@ -146,7 +161,7 @@ def is_valid_email(email: str):
     valid = re.match(emailPattern, email) is not None
     if not valid:
         invalidEmailLabel.visible = True
-        invalidEmailLabel.set_text(f"{email} is an INVALID email.") 
+        invalidEmailLabel.set_text(f"{email} is NOT a valid email") 
         return False
     else:
         invalidEmailLabel.visible = False
@@ -156,21 +171,32 @@ async def redirect(url):
     await ui.run_javascript(f'top.location.href = "{url}"', respond=True)
 
 
-async def send_email(email: str):
+async def submit_order(db, email: str):
+    global orderNum
+    global purchaseConfiguration
+    
+    
     if is_valid_email(email):
         floorplanView.set_visibility(False)
         exteriorView.set_visibility(False)
         interiorView.set_visibility(False)
         finalView.set_visibility(True)
-        print(purchaseConfiguration)
+        
+        orderNum = db.insert_configuration_table(purchaseConfiguration, email)
+        slackAPI = Slack()
+        slackAPI.send_message(f'{email} with order # {orderNum} submitted the followinng configuration {purchaseConfiguration}')
+
         await redirect("https://www.mammothfactory.co/deposit")
+        #sleep(5)
+        #floorplanView.set_visibility(True)
+        #finalView.set_visibility(False)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
     darkMode.enable()
     ui.colors(primary=GC.MAMMOTH_BRIGHT_GRREN)
 
-    purchaseConfiguration = [GC.FLOOR_PLAN_TYPES[0], GC.EXTERIOR_MATERIALS[0], GC.INTERIOR_COLOR[0], GC.ROOF_STYLE[0], GC.EXTRAS[0]]
+    db = OrderDatabase()
 
     imageGrid = ui.grid(columns=1)
     with imageGrid:
@@ -203,10 +229,12 @@ if __name__ in {"__main__", "__mp_main__"}:
         
         with ui.column():
             floorplanRadioButtons = ui.radio(GC.FLOOR_PLAN_TYPES, value=GC.FLOOR_PLAN_TYPES[0], on_change=select_floor_plan_image).props('inline color=white')
-            exteriorRadioButtons = ui.radio(GC.EXTERIOR_MATERIALS, value=GC.EXTERIOR_MATERIALS[0], on_change=select_exterior_image).props('inline color=white')
+            exteriorRadioButtons = ui.radio(GC.EXTERIOR_MATERIAL, value=GC.EXTERIOR_MATERIAL[0], on_change=select_exterior_image).props('inline color=white')
             exteriorRadioButtons.set_visibility(False)
             interiorRadioButtons = ui.radio(["Dark", "Light"], value=GC.INTERIOR_COLOR[0], on_change=select_interior_image).props('inline color=white')
             interiorRadioButtons.set_visibility(False)
+            
+            
         
 
 
@@ -218,6 +246,6 @@ if __name__ in {"__main__", "__mp_main__"}:
                                 validation={'ERROR: Your email is longer then 48 characters': lambda e: len(e) <= GC.MAX_EMAIL_LENGHT}).classes('w-80')
         invalidEmailLabel = ui.label()
         invalidEmailLabel.visible = False
-        submitButton = ui.button("SUMBIT CONFIG", on_click=lambda e: send_email(emailTextBox.value)).classes('w-80')
+        submitButton = ui.button("SUMBIT CONFIG", on_click=lambda e: submit_order(db, emailTextBox.value)).classes('w-80')
 
     ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)
