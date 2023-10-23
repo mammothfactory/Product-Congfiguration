@@ -1,4 +1,5 @@
 ProductConfigurationENV
 .DS_Store
 .env
+*.db
 __pycache__

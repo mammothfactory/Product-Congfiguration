@@ -37,7 +37,7 @@ EXTRAS_VIEW_NUM = 4
 
 
 FLOOR_PLAN_TYPES = ['LiteHouse', 'Lustron', 'POD']
-EXTERIOR_MATERIALS = ['Brick', 'Dark', 'Weathered', 'White', 'Light']
+EXTERIOR_MATERIAL = ['Brick', 'Dark', 'Weathered', 'White', 'Light']
 INTERIOR_COLOR = ['Dark', 'Light']
 ROOF_STYLE = ['Flat', 'White Metal', 'Black Metal with Solar Panels']
 EXTRAS = ['18 kWh Big Battery', 'Washer / Dryer Combo']
